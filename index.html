@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コトバポップ</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React, ReactDOM, Babel (ブラウザでそのまま動かすため) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* アニメーション用の簡単なCSS */
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- ここからReactのコード -->
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // クイズのデータ（ご自身の画像URLやBase64データを入れる場合はここを変更します）
+    const quizData = {
+      たべもの: [
+        { id: 1, illustration: "🍣", answer: "すし", options: ["すし", "てんぷら", "ラーメン", "おにぎり"] },
+        { id: 2, illustration: "🍙", answer: "おにぎり", options: ["おにぎり", "パン", "カレー", "うどん"] },
+        { id: 3, illustration: "🍔", answer: "ハンバーガー", options: ["ハンバーガー", "ぴざ", "ピザ", "すし"] },
+        { id: 4, illustration: "🍜", answer: "ラーメン", options: ["ラーメン", "そば", "うどん", "スパゲッティ"] },
+        { id: 5, illustration: "🍰", answer: "ケーキ", options: ["ケーキ", "プリン", "パン", "アイスクリーム"] },
+      ],
+      どうぶつ: [
+        { id: 1, illustration: "🐶", answer: "いぬ", options: ["いぬ", "ねこ", "とり", "さる"] },
+        { id: 2, illustration: "🐘", answer: "ぞう", options: ["ぞう", "らいおん", "きりん", "とり"] },
+        { id: 3, illustration: "🐱", answer: "ねこ", options: ["ねこ", "ねずみ", "うさぎ", "いぬ"] },
+        { id: 4, illustration: "🦒", answer: "きりん", options: ["きりん", "ぞう", "うま", "ねこ"] },
+        { id: 5, illustration: "🐧", answer: "ぺんぎん", options: ["ぺんぎん", "いるか", "ねこ", "うま"] },
+      ],
+      くだもの: [
+        { id: 1, illustration: "🍎", answer: "りんご", options: ["りんご", "みかん", "もも", "なし"] },
+        { id: 2, illustration: "🍌", answer: "バナナ", options: ["バナナ", "パイナップル", "スイカ", "メロン"] },
+        { id: 3, illustration: "🍇", answer: "ぶどう", options: ["ぶどう", "いちご", "さくらんぼ", "ブルーベリー"] },
+        { id: 4, illustration: "🍓", answer: "いちご", options: ["いちご", "すいか", "めろん", "もも"] },
+        { id: 5, illustration: "🍊", answer: "みかん", options: ["みかん", "りんご", "ぶどう", "レモン"] },
+      ],
+      スポーツ: [
+        { id: 1, illustration: "⚽", answer: "サッカー", options: ["サッカー", "やきゅう", "テニス", "バスケットボール"] },
+        { id: 2, illustration: "⚾", answer: "やきゅう", options: ["やきゅう", "たっきゅう", "バレーボール", "バスケットボール"] },
+        { id: 3, illustration: "🎾", answer: "テニス", options: ["テニス", "バドミントン", "ゴルフ", "すいえい"] },
+        { id: 4, illustration: "🏀", answer: "バスケットボール", options: ["バスケットボール", "バレーボール", "サッカー", "ハンドボール"] },
+        { id: 5, illustration: "🏊", answer: "すいえい", options: ["すいえい", "サッカー", "テニス", "やきゅう"] },
+      ],
+      あいさつ: [
+        { id: 1, illustration: "☀️", answer: "おはよう", options: ["おはよう", "すみません", "こんばんは", "さようなら"] },
+        { id: 2, illustration: "🙇", answer: "すみません", options: ["おはよう", "おやすみなさい", "ありがとう", "すみません"] },
+        { id: 3, illustration: "🌙", answer: "こんばんは", options: ["こんばんは", "こんにちは", "おはよう", "ありがとう"] },
+        { id: 4, illustration: "🙏", answer: "ありがとう", options: ["ありがとう", "すみません", "さようなら", "おはよう"] },
+        { id: 5, illustration: "👋", answer: "さようなら", options: ["さようなら", "こんにちは", "こんばんは", "おやすみなさい"] },
+      ]
+    };
+
+    const shuffleArray = (array) => {
+      return [...array].sort(() => Math.random() - 0.5);
+    };
+
+    function App() {
+      const [screen, setScreen] = useState('home');
+      const [category, setCategory] = useState('');
+      const [questions, setQuestions] = useState([]);
+      const [currentIndex, setCurrentIndex] = useState(0);
+      const [score, setScore] = useState(0);
+      const [selectedOption, setSelectedOption] = useState(null);
+      const [isCorrect, setIsCorrect] = useState(null);
+
+      const [customQuestions, setCustomQuestions] = useState([]);
+      const [newImage, setNewImage] = useState(null);
+      const [newAnswer, setNewAnswer] = useState('');
+
+      const startGame = (selectedCategory) => {
+        const categoryQuestions = quizData[selectedCategory].map(q => ({
+          ...q,
+          options: shuffleArray(q.options)
+        }));
+        
+        setCategory(selectedCategory);
+        setQuestions(categoryQuestions);
+        setCurrentIndex(0);
+        setScore(0);
+        setSelectedOption(null);
+        setIsCorrect(null);
+        setScreen('game');
+      };
+
+      const startCustomGame = () => {
+        if (customQuestions.length < 4) return;
+        const allAnswers = customQuestions.map(q => q.answer);
+        const gameQuestions = customQuestions.map(q => {
+          const otherAnswers = allAnswers.filter(a => a !== q.answer);
+          const shuffledOthers = shuffleArray(otherAnswers).slice(0, 3);
+          const options = shuffleArray([q.answer, ...shuffledOthers]);
+          return { ...q, options: options };
+        });
+        setCategory('じぶんのクイズ');
+        setQuestions(shuffleArray(gameQuestions));
+        setCurrentIndex(0);
+        setScore(0);
+        setSelectedOption(null);
+        setIsCorrect(null);
+        setScreen('game');
+      };
+
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => setNewImage(reader.result);
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const addCustomQuestion = () => {
+        if (newImage && newAnswer) {
+          setCustomQuestions([
+            ...customQuestions,
+            { id: Date.now(), illustration: newImage, answer: newAnswer, isImage: true }
+          ]);
+          setNewImage(null);
+          setNewAnswer('');
+        }
+      };
+
+      const handleAnswer = (option) => {
+        if (selectedOption !== null) return;
+        const correct = option === questions[currentIndex].answer;
+        setSelectedOption(option);
+        setIsCorrect(correct);
+        if (correct) setScore(score + 1);
+
+        setTimeout(() => {
+          if (currentIndex + 1 < questions.length) {
+            setCurrentIndex(currentIndex + 1);
+            setSelectedOption(null);
+            setIsCorrect(null);
+          } else {
+            setScreen('result');
+          }
+        }, 1500);
+      };
+
+      const goHome = () => setScreen('home');
+
+      return (
+        <div className="min-h-screen bg-yellow-50 text-gray-800 font-sans p-4 flex flex-col items-center justify-center">
+          
+          {screen === 'home' && (
+            <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg text-center">
+              <h1 className="text-4xl font-black text-pink-500 mb-2">コトバポップ</h1>
+              <p className="text-lg text-gray-500 mb-8">にほんご を たのしく おぼえよう！</p>
+              
+              <h2 className="text-xl font-bold mb-4">どれで あそぶ？</h2>
+              <div className="grid grid-cols-1 gap-4 mb-8">
+                {Object.keys(quizData).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => startGame(cat)}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-sm"
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="border-t-2 border-dashed border-gray-200 pt-6">
+                <h2 className="text-xl font-bold mb-4">オリジナルを つくる</h2>
+                <button
+                  onClick={() => setScreen('create')}
+                  className="w-full bg-green-100 hover:bg-green-200 text-green-700 font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-sm"
+                >
+                  ➕ じぶんのクイズ
+                </button>
+              </div>
+            </div>
+          )}
+
+          {screen === 'create' && (
+            <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg">
+              <div className="flex justify-between items-center mb-6">
+                <button onClick={goHome} className="text-gray-400 hover:text-gray-600 font-bold">◀ ほーむへ</button>
+                <h2 className="text-2xl font-bold text-green-500">もんだいづくり</h2>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-2xl mb-6">
+                <p className="text-sm text-gray-600 mb-4">
+                  がぞう と こたえ を いれてね。<br/>
+                  （せんたくし を つくるため、<span className="text-red-500 font-bold">４つ いじょう</span> ひとつよう です）
+                </p>
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 mb-4" />
+                {newImage && <div className="mb-4 text-center"><img src={newImage} alt="プレビュー" className="max-h-32 mx-auto rounded-lg shadow-sm" /></div>}
+                <input type="text" placeholder="こたえ（ひらがな・カタカナ）" value={newAnswer} onChange={(e) => setNewAnswer(e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl mb-4 focus:outline-none focus:border-green-400 text-xl" />
+                <button onClick={addCustomQuestion} disabled={!newImage || !newAnswer} className="w-full bg-green-400 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-xl text-xl transition-all shadow-sm">もんだい を ついかする</button>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="font-bold mb-2">いま つくった もんだい ({customQuestions.length}こ)</h3>
+                <div className="flex overflow-x-auto gap-2 pb-2">
+                  {customQuestions.map((q) => (
+                    <div key={q.id} className="min-w-[80px] text-center">
+                      <img src={q.illustration} alt={q.answer} className="w-20 h-20 object-cover rounded-lg shadow-sm mb-1" />
+                      <p className="text-xs font-bold truncate">{q.answer}</p>
+                    </div>
+                  ))}
+                  {customQuestions.length === 0 && <p className="text-gray-400 text-sm">まだ ありません</p>}
+                </div>
+              </div>
+              <button onClick={startCustomGame} disabled={customQuestions.length < 4} className="w-full bg-pink-400 hover:bg-pink-500 disabled:bg-gray-300 text-white font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-md">あそぶ！ (４つ いじょう)</button>
+            </div>
+          )}
+
+          {screen === 'game' && questions.length > 0 && (
+            <div className="max-w-md w-full">
+              <div className="flex justify-between items-center mb-6 px-2">
+                <button onClick={goHome} className="text-gray-400 hover:text-gray-600 font-bold">◀ やめる</button>
+                <div className="text-xl font-bold bg-white px-4 py-1 rounded-full shadow-sm">{currentIndex + 1} / {questions.length}</div>
+                <div className="text-xl font-bold text-pink-500">{category}</div>
+              </div>
+
+              <div className="bg-white p-10 rounded-3xl shadow-lg text-center mb-6 relative min-h-[250px] flex flex-col items-center justify-center">
+                <div className="text-9xl filter drop-shadow-md">
+                  {questions[currentIndex].isImage ? (
+                    <img src={questions[currentIndex].illustration} alt="いらすと" className="max-h-48 object-contain" />
+                  ) : (
+                    questions[currentIndex].illustration
+                  )}
+                </div>
+                
+                {isCorrect === true && <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-3xl animate-bounce"><span className="text-9xl text-green-500 font-black">◯</span></div>}
+                {isCorrect === false && <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-3xl animate-pulse"><span className="text-9xl text-red-500 font-black">✖</span></div>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {questions[currentIndex].options.map((option, index) => {
+                  let buttonStyle = "bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200 shadow-sm";
+                  if (selectedOption !== null) {
+                    if (option === questions[currentIndex].answer) buttonStyle = "bg-green-100 border-green-400 text-green-700 font-bold shadow-md";
+                    else if (option === selectedOption) buttonStyle = "bg-red-100 border-red-400 text-red-700 shadow-md";
+                    else buttonStyle = "bg-gray-50 border-gray-200 text-gray-400 opacity-50";
+                  }
+                  return (
+                    <button key={index} onClick={() => handleAnswer(option)} disabled={selectedOption !== null} className={`py-6 px-4 rounded-2xl text-2xl font-bold transition-all ${buttonStyle} ${selectedOption === null ? 'active:scale-95' : ''}`}>{option}</button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {screen === 'result' && (
+            <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg text-center animate-fade-in">
+              <h2 className="text-3xl font-black text-pink-500 mb-6">おわり！</h2>
+              <div className="text-8xl mb-6">
+                {score === questions.length ? "🌟" : score >= questions.length / 2 ? "👍" : "💪"}
+              </div>
+              <p className="text-2xl font-bold mb-8">
+                {questions.length}もんちゅう <br/>
+                <span className="text-5xl text-blue-500 my-4 inline-block">{score}</span> もん <br/>せいかい！
+              </p>
+              <button onClick={goHome} className="w-full bg-pink-400 hover:bg-pink-500 text-white font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-md">もういちど あそぶ</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
