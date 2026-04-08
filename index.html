@@ -83,10 +83,6 @@
       const [selectedOption, setSelectedOption] = useState(null);
       const [isCorrect, setIsCorrect] = useState(null);
 
-      const [customQuestions, setCustomQuestions] = useState([]);
-      const [newImage, setNewImage] = useState(null);
-      const [newAnswer, setNewAnswer] = useState('');
-
       const startGame = (selectedCategory) => {
         const categoryQuestions = quizData[selectedCategory].map(q => ({
           ...q,
@@ -100,44 +96,6 @@
         setSelectedOption(null);
         setIsCorrect(null);
         setScreen('game');
-      };
-
-      const startCustomGame = () => {
-        if (customQuestions.length < 4) return;
-        const allAnswers = customQuestions.map(q => q.answer);
-        const gameQuestions = customQuestions.map(q => {
-          const otherAnswers = allAnswers.filter(a => a !== q.answer);
-          const shuffledOthers = shuffleArray(otherAnswers).slice(0, 3);
-          const options = shuffleArray([q.answer, ...shuffledOthers]);
-          return { ...q, options: options };
-        });
-        setCategory('じぶんのクイズ');
-        setQuestions(shuffleArray(gameQuestions));
-        setCurrentIndex(0);
-        setScore(0);
-        setSelectedOption(null);
-        setIsCorrect(null);
-        setScreen('game');
-      };
-
-      const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onloadend = () => setNewImage(reader.result);
-          reader.readAsDataURL(file);
-        }
-      };
-
-      const addCustomQuestion = () => {
-        if (newImage && newAnswer) {
-          setCustomQuestions([
-            ...customQuestions,
-            { id: Date.now(), illustration: newImage, answer: newAnswer, isImage: true }
-          ]);
-          setNewImage(null);
-          setNewAnswer('');
-        }
       };
 
       const handleAnswer = (option) => {
@@ -180,50 +138,6 @@
                   </button>
                 ))}
               </div>
-
-              <div className="border-t-2 border-dashed border-gray-200 pt-6">
-                <h2 className="text-xl font-bold mb-4">オリジナルを つくる</h2>
-                <button
-                  onClick={() => setScreen('create')}
-                  className="w-full bg-green-100 hover:bg-green-200 text-green-700 font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-sm"
-                >
-                  ➕ じぶんのクイズ
-                </button>
-              </div>
-            </div>
-          )}
-
-          {screen === 'create' && (
-            <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={goHome} className="text-gray-400 hover:text-gray-600 font-bold">◀ ほーむへ</button>
-                <h2 className="text-2xl font-bold text-green-500">もんだいづくり</h2>
-              </div>
-
-              <div className="bg-green-50 p-4 rounded-2xl mb-6">
-                <p className="text-sm text-gray-600 mb-4">
-                  がぞう と こたえ を いれてね。<br/>
-                  （せんたくし を つくるため、<span className="text-red-500 font-bold">４つ いじょう</span> ひとつよう です）
-                </p>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-100 file:text-green-700 hover:file:bg-green-200 mb-4" />
-                {newImage && <div className="mb-4 text-center"><img src={newImage} alt="プレビュー" className="max-h-32 mx-auto rounded-lg shadow-sm" /></div>}
-                <input type="text" placeholder="こたえ（ひらがな・カタカナ）" value={newAnswer} onChange={(e) => setNewAnswer(e.target.value)} className="w-full p-3 border-2 border-gray-200 rounded-xl mb-4 focus:outline-none focus:border-green-400 text-xl" />
-                <button onClick={addCustomQuestion} disabled={!newImage || !newAnswer} className="w-full bg-green-400 hover:bg-green-500 disabled:bg-gray-300 text-white font-bold py-3 px-4 rounded-xl text-xl transition-all shadow-sm">もんだい を ついかする</button>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="font-bold mb-2">いま つくった もんだい ({customQuestions.length}こ)</h3>
-                <div className="flex overflow-x-auto gap-2 pb-2">
-                  {customQuestions.map((q) => (
-                    <div key={q.id} className="min-w-[80px] text-center">
-                      <img src={q.illustration} alt={q.answer} className="w-20 h-20 object-cover rounded-lg shadow-sm mb-1" />
-                      <p className="text-xs font-bold truncate">{q.answer}</p>
-                    </div>
-                  ))}
-                  {customQuestions.length === 0 && <p className="text-gray-400 text-sm">まだ ありません</p>}
-                </div>
-              </div>
-              <button onClick={startCustomGame} disabled={customQuestions.length < 4} className="w-full bg-pink-400 hover:bg-pink-500 disabled:bg-gray-300 text-white font-bold py-4 px-6 rounded-2xl text-2xl transition-transform active:scale-95 shadow-md">あそぶ！ (４つ いじょう)</button>
             </div>
           )}
 
@@ -237,11 +151,7 @@
 
               <div className="bg-white p-10 rounded-3xl shadow-lg text-center mb-6 relative min-h-[250px] flex flex-col items-center justify-center">
                 <div className="text-9xl filter drop-shadow-md">
-                  {questions[currentIndex].isImage ? (
-                    <img src={questions[currentIndex].illustration} alt="いらすと" className="max-h-48 object-contain" />
-                  ) : (
-                    questions[currentIndex].illustration
-                  )}
+                  {questions[currentIndex].illustration}
                 </div>
                 
                 {isCorrect === true && <div className="absolute inset-0 flex items-center justify-center bg-white/80 rounded-3xl animate-bounce"><span className="text-9xl text-green-500 font-black">◯</span></div>}
